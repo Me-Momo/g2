@@ -4,7 +4,6 @@
  */
 const Util = require('../../util');
 const Base = require('./base');
-const renderer = require('../../renderer');
 
 class RegionFilter extends Base {
   getDefaultCfg() {
@@ -49,7 +48,7 @@ class RegionFilter extends Base {
       if (filter) {
         shapes.map(shape => {
           const shapeType = shape.type;
-          const shapeAttr = Util.cloneDeep(shape.attr());
+          const shapeAttr = Util.cloneDeep(shape.get('attrs'));
           self._adjustDisplay(shapeAttr);
           const s = layer.addShape(shapeType, {
             attrs: shapeAttr
@@ -63,11 +62,11 @@ class RegionFilter extends Base {
     return output;
   }
 
-  _drawClip(coord) {
+  _drawClip(coord, group) {
     const self = this;
     const start = self.parsePoint(coord, self.start);
     const end = self.parsePoint(coord, self.end);
-    const c = new renderer.Rect({
+    const c = group.addShape('rect', {
       attrs: {
         x: start.x,
         y: start.y,
@@ -83,9 +82,9 @@ class RegionFilter extends Base {
     const self = this;
     const color = self.color;
     if (attr.fill) {
-      attr.fill = attr.fillStyle = color;
+      attr.fill = color;
     }
-    attr.stroke = attr.strokeStyle = color;
+    attr.stroke = color;
   }
 
   _geomFilter(geomType) {

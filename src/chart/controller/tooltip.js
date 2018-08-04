@@ -249,7 +249,7 @@ class TooltipController {
       x: ev.x,
       y: ev.y
     };
-    if ((timeStamp - lastTimeStamp) > 16 && !this.chart.get('stopTooltip')) {
+    if ((timeStamp - lastTimeStamp) > 16) {
       this.showTooltip(point, ev.views, ev.shape);
       this.timeStamp = timeStamp;
     }

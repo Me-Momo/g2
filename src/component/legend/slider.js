@@ -112,8 +112,8 @@ class Slider extends Group {
     const maxHandleElement = this.get('maxHandleElement');
     const middleHandleElement = this.get('middleHandleElement');
 
-    minHandleElement.resetMatrix();
-    maxHandleElement.resetMatrix();
+    minHandleElement.initTransform();
+    maxHandleElement.initTransform();
 
     if (layout === 'horizontal') {
       middleHandleElement.attr({
@@ -204,6 +204,7 @@ class Slider extends Group {
         range[0] = range[1] - diffStashRange;
       }
     }
+
     this.emit('sliderchange', {
       range
     });
@@ -231,17 +232,14 @@ class Slider extends Group {
     const containerDOM = this.get('canvas').get('containerDOM');
     this.onMouseMoveListener = DomUtil.addEventListener(containerDOM, 'mousemove', Util.wrapBehavior(this, '_onCanvasMouseMove'));
     this.onMouseUpListener = DomUtil.addEventListener(containerDOM, 'mouseup', Util.wrapBehavior(this, '_onCanvasMouseUp'));
-    this.onMouseLeaveListener = DomUtil.addEventListener(containerDOM, 'mouseleave', Util.wrapBehavior(this, '_onCanvasMouseUp'));
   }
 
   _onCanvasMouseMove(ev) {
-    if (!this._mouseOutArea(ev)) {
-      const layout = this.get('layout');
-      if (layout === 'horizontal') {
-        this._updateStatus('x', ev);
-      } else {
-        this._updateStatus('y', ev);
-      }
+    const layout = this.get('layout');
+    if (layout === 'horizontal') {
+      this._updateStatus('x', ev);
+    } else {
+      this._updateStatus('y', ev);
     }
   }
 
@@ -253,24 +251,6 @@ class Slider extends Group {
     this.onMouseMoveListener.remove();
     this.onMouseUpListener.remove();
   }
-
-  _mouseOutArea(ev) {
-    const el = this.get('canvas').get('el');
-    const el_bbox = el.getBoundingClientRect();
-    const parent = this.get('parent');
-    const bbox = parent.getBBox();
-    const left = parent.attr('matrix')[6];
-    const top = parent.attr('matrix')[7];
-    const right = left + bbox.width;
-    const bottom = top + bbox.height;
-    const mouseX = ev.clientX - el_bbox.x;
-    const mouseY = ev.clientY - el_bbox.y;
-    if (mouseX < left || mouseX > right || mouseY < top || mouseY > bottom) {
-      return true;
-    }
-    return false;
-  }
-
 }
 
 module.exports = Slider;

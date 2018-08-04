@@ -1,4 +1,4 @@
-const Scale = require('@antv/scale/lib');
+const Scale = require('@antv/scale/src');
 const G = require('./renderer');
 const Animate = require('./animate/animate');
 const Chart = require('./chart/chart');

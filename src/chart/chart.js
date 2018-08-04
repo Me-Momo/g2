@@ -67,8 +67,6 @@ class Chart extends View {
       padding: Global.plotCfg.padding,
       background: null,
       autoPaddingAppend: 5,
-      renderer: Global.renderer,
-      // renderer: 'svg',
       views: []
     });
   }
@@ -161,8 +159,7 @@ class Chart extends View {
       containerDOM: wrapperEl,
       width,
       height,
-      pixelRatio: this.get('pixelRatio'),
-      renderer: this.get('renderer')
+      pixelRatio: this.get('pixelRatio')
     });
     this.set('canvas', canvas);
   }
@@ -236,7 +233,7 @@ class Chart extends View {
             const scale = attr.getScale(type);
             if (scale.field && scale.type !== 'identity' && !_isScaleExist(scales, scale)) {
               scales.push(scale);
-              const filteredValues = view.getFilteredOutValues(scale.field);
+              const filteredValues = view.getFilteredValues(scale.field);
               legendController.addLegend(scale, attr, geom, filteredValues);
             }
           });
@@ -323,7 +320,6 @@ class Chart extends View {
     const plot = this.get('plot');
     self.set('width', width);
     self.set('height', height);
-    // change size 时重新计算边框
     plot.repaint();
     // 保持边框不变，防止自动 padding 时绘制多遍
     this.set('keepPadding', true);
@@ -493,6 +489,7 @@ class Chart extends View {
   // chart 除了view 上绘制的组件外，还会绘制图例和 tooltip
   drawComponents() {
     super.drawComponents();
+    // TODO:xinming 可以在这里重新判断一下是否要重新plot.repaint
     // 一般是点击图例时，仅仅隐藏某些选项，而不销毁图例
     if (!this.get('keepLegend')) {
       this._renderLegends(); // 渲染图例
@@ -511,6 +508,7 @@ class Chart extends View {
       const autoPadding = this._getAutoPadding();
       const plot = this.get('plot');
       // 在计算出来的边框不一致的情况，重新改变边框
+      // TODO-xinming:07.30 在changeSize的时候 也要重新计算一下边框！ 计算逻辑是什么！！
       if (!isEqualArray(plot.get('padding'), autoPadding)) {
         plot.set('padding', autoPadding);
         plot.repaint();
@@ -544,68 +542,49 @@ class Chart extends View {
    * @return {String} dataUrl 路径
    */
   toDataURL() {
-    const chart = this;
-    const canvas = chart.get('canvas');
-    const renderer = chart.get('renderer');
+    const canvas = this.get('canvas');
     const canvasDom = canvas.get('el');
-    let dataURL = '';
-    if (renderer === 'svg') {
-      const clone = canvasDom.cloneNode(true);
-      const svgDocType = document.implementation.createDocumentType(
-        'svg', '-//W3C//DTD SVG 1.1//EN', 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'
-      );
-      const svgDoc = document.implementation.createDocument('http://www.w3.org/2000/svg', 'svg', svgDocType);
-      svgDoc.replaceChild(clone, svgDoc.documentElement);
-      const svgData = (new XMLSerializer()).serializeToString(svgDoc);
-      dataURL = 'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svgData);
-    } else if (renderer === 'canvas') {
-      dataURL = canvasDom.toDataURL('image/png');
-    }
+    const dataURL = canvasDom.toDataURL('image/png');
     return dataURL;
   }
 
   /**
    * 图表导出功能
-   * @param  {String} [name] 图片的名称，默认为 chart(.png|.svg)
+   * @param  {String} [name] 图片的名称，默认为 chart.png
+   * @return {String} 返回生成图片的 dataUrl 路径
    */
   downloadImage(name) {
-    const chart = this;
+    const dataURL = this.toDataURL();
     const link = document.createElement('a');
-    const renderer = chart.get('renderer');
-    const filename = (name || 'chart') + (renderer === 'svg' ? '.svg' : '.png');
-    const canvas = chart.get('canvas');
-    canvas.get('timeline').stopAllAnimations();
 
-    setTimeout(() => {
-      const dataURL = chart.toDataURL();
-      if (window.Blob && window.URL && renderer !== 'svg') {
-        const arr = dataURL.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        const blobObj = new Blob([ u8arr ], { type: mime });
-        if (window.navigator.msSaveBlob) {
-          window.navigator.msSaveBlob(blobObj, filename);
-        } else {
-          link.addEventListener('click', function() {
-            link.download = filename;
-            link.href = window.URL.createObjectURL(blobObj);
-          });
-        }
+    if (window.Blob && window.URL) {
+      const arr = dataURL.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blobObj = new Blob([ u8arr ], { type: mime });
+      if (window.navigator.msSaveBlob) {
+        window.navigator.msSaveBlob(blobObj, (name || 'chart') + '.png');
       } else {
         link.addEventListener('click', function() {
-          link.download = filename;
-          link.href = dataURL;
+          link.download = (name || 'chart') + '.png';
+          link.href = window.URL.createObjectURL(blobObj);
         });
       }
-      const e = document.createEvent('MouseEvents');
-      e.initEvent('click', false, false);
-      link.dispatchEvent(e);
-    }, 16);
+    } else {
+      link.addEventListener('click', function() {
+        link.download = (name || 'chart') + '.png';
+        link.href = dataURL.replace('image/png', 'image/octet-stream');
+      });
+    }
+    const e = document.createEvent('MouseEvents');
+    e.initEvent('click', false, false);
+    link.dispatchEvent(e);
+    return dataURL;
   }
 
   /**

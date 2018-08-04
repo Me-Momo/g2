@@ -6,10 +6,9 @@ const Util = require('./util');
 const Theme = require('./theme/index');
 
 const Global = {
-  version: '3.2.7-beta.5',
+  version: '3.2.4',
   renderer: 'canvas',
   trackable: true,
-  trackingInfo: {},
   animate: true,
   widthRatio: { // 宽度所占的分类的比例
     column: 1 / 2, // 一般的柱状图占比 1/2
