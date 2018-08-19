@@ -13,12 +13,13 @@ const Shape = require('./shape');
 // const svgpath = require('svgpath');
 const { Marker } = require('../../renderer');
 
-const SHAPES = [ 'circle', 'square', 'bowtie', 'diamond', 'hexagon', 'triangle', 'triangle-down' ];
+const SHAPES = [ 'circle', 'square', 'bowtie', 'diamond', 'hexagon', 'triangle', 'triangle-down', 'star' ];
 const HOLLOW_SHAPES = [ 'cross', 'tick', 'plus', 'hyphen', 'line', 'pointerLine', 'pointerArrow' ];
 const SQRT_3 = Math.sqrt(3);
 
 // 增加marker
 Util.mix(Marker.Symbols, {
+  // 六角形
   hexagon(x, y, r) {
     const diffX = (r / 2) * SQRT_3;
     return [
@@ -31,6 +32,43 @@ Util.mix(Marker.Symbols, {
       [ 'Z' ]
     ];
   },
+  /**
+   * @desc 五角星
+   * @param {number} x 中心点坐标x
+   * @param {number} y 中心点坐标y
+   * @param {number} r 五角星边长
+   * @return {array} 返回五角星的十个点
+   */
+  star(x, y, r) {
+    // 外顶点：[Math.cos( toRadian(18+72*i)) * R, Math.sin( toRadian(18+72*i)) * R]
+    // 内顶点：[Math.cos( toRadian(54+72*i)) * R, Math.sin( toRadian(54+72*i)) * R]
+    const toRadian = angle => angle / 180 * Math.PI;
+    const calOutterPoint = i => ({
+      x: x + Math.cos(toRadian(18 + 72 * i)) * r,
+      y: y + Math.sin(toRadian(18 + 72 * i)) * r
+    });
+    const calInnerPoint = i => ({
+      x: x + Math.cos(toRadian(54 + 72 * i)) * r * Math.sin(toRadian(18)),
+      y: y + Math.sin(toRadian(54 + 72 * i)) * r * Math.sin(toRadian(18))
+    });
+    const points = [];
+    let outterPoint;
+    let innerPoint;
+    for (let i = 0; i < 5; i++) {
+      outterPoint = calOutterPoint(i);
+      innerPoint = calInnerPoint(i);
+      // TODO 了解坐标系位置问题 如何反转最佳;目前的五角星是倒向的
+      const action = i === 0 ? 'M' : 'L';
+      points.push([ action, outterPoint.x, outterPoint.y ]);
+      points.push([ 'L', innerPoint.x, innerPoint.y ]);
+    }
+    console.warn('points:', points);
+    return [
+      ...points,
+      [ 'Z' ]
+    ];
+  },
+  // 蝴蝶结
   bowtie(x, y, r) {
     const diffY = r - 1.5;
     return [
@@ -67,6 +105,7 @@ Util.mix(Marker.Symbols, {
       [ 'L', x, y + r ]
     ];
   },
+  // 连字符
   hyphen(x, y, r) {
     return [
       [ 'M', x - r, y ],
@@ -225,7 +264,10 @@ Util.each(HOLLOW_SHAPES, function(shape) {
   });
 });
 
-// image
+/**
+ * @desc 注册image 形状
+ * 调用方式 .shape('field', (field) => ['image', ${imgUrl}]) => cfg.shape[1]可获取${imgUrl}
+ */
 Shape.registerShape('point', 'image', {
   draw(cfg, container) {
     cfg.points = this.parsePoints(cfg.points);

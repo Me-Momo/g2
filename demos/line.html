@@ -97,11 +97,12 @@
         lineDash: [ 10, 10 ]
       })
       .color('#0066e3');
-    chart.point().position('year*bicycles').size(6)
-      .shape('circle')
+    chart.point().position('year*bicycles').size(8)
+      .shape('star')
       .style({
-        lineWidth: 2,
-        stroke: '#fff'
+        lineWidth: 1,
+        fill: 'yellow',
+        stroke: '#888'
       });
     chart.render();
   </script>
