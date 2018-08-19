@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="geometry" content="bullet">
+  <link rel="stylesheet" href="./assets/common.css">
+  <title>Bullet</title>
+</head>
+
+<body>
+  <div id="canvas"></div>
+  <script src="./assets/jquery-3.2.1.min.js"></script>
+  <script src="./assets/data-set.min.js"></script>
+  <script src="../build/g2.js"></script>
+  <script>
+    const data = [
+      {
+        x: 'Oceania',
+        max: 100,
+        actual: 90,
+        target: 95
+      },
+      {
+        x: 'East Europe',
+        max: 100,
+        actual: 83,
+        target: 88
+      },
+      {
+        x: 'Australia',
+        max: 100,
+        actual: 90,
+        target: 85
+      }
+    ];
+    const ds = new DataSet();
+    const dv = ds.createView('test').source(data);
+    dv.transform({
+      type: 'map',
+      callback: function callback(obj) {
+        // 如果没有输入最大值的话,会取max(target, actual)
+        obj.range = [ obj.target, obj.actual, obj.max ];
+        return obj;
+      }
+    });
+
+    const chart = new G2.Chart({
+      container: 'canvas',
+      forceFit: true,
+      height: 300,
+      padding: 'auto'
+    });
+    chart.source(dv, {
+      range: {
+        // 定义坐标轴最小值
+        min: 0
+      }
+    });
+    const geom = chart
+      .schema()
+      .position('x*range')
+      .shape('bullet');
+
+    geom.style({
+      stroke: '##333',
+      lineWidth: 3,
+      fill: '#223273'
+    }).size(20);
+    chart.axis(false);
+    chart.axis('x', {
+      position: 'left'
+    });
+    chart.coord('rect').transpose();
+    chart.render();
+  </script>
+</body>
+
+</html>
